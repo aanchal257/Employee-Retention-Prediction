@@ -186,7 +186,7 @@ st.write("Training Data Shape:", X_train.shape)
 st.write("Testing Data Shape:", X_test.shape)
 
 #Create Logistic Regression Model
-model= LogisticRegression()
+model = LogisticRegression(max_iter=1000)
 
 #Train the Model
 model.fit(X_train,y_train)
@@ -238,3 +238,46 @@ salary = st.selectbox(
     "Salary",
     ["low","medium","high"]
 )
+
+# Predict Button
+if st.button("Predict Employee Retention"):
+
+    # Create input data
+    input_data = pd.DataFrame({
+        'satisfaction_level': [satisfaction],
+        'average_montly_hours': [hours],
+        'promotion_last_5years': [promotion],
+        'Department': [department],
+        'salary': [salary]
+    })
+
+    # Encoding
+    dept_dummies = pd.get_dummies(input_data['Department'], prefix='Department')
+    salary_dummies = pd.get_dummies(input_data['salary'], prefix='salary')
+
+    input_data = pd.concat([input_data, dept_dummies, salary_dummies], axis=1)
+
+    input_data.drop(['Department', 'salary'], axis=1, inplace=True)
+
+    # Make sure all training columns exist
+    for col in X.columns:
+        if col not in input_data.columns:
+            input_data[col] = 0
+
+    # Arrange columns in the same order as training data
+    input_data = input_data[X.columns]
+
+    # Prediction
+    prediction = model.predict(input_data)[0]
+    probability = model.predict_proba(input_data)[0]
+
+    st.markdown("---")
+    st.subheader("Prediction Result")
+
+    if prediction == 0:
+        st.success("Employee is likely to Stay.")
+    else:
+        st.error("Employee is likely to Leave.")
+
+    st.write(f"Probability of Staying: **{probability[0]*100:.2f}%**")
+    st.write(f"Probability of Leaving: **{probability[1]*100:.2f}%**")
